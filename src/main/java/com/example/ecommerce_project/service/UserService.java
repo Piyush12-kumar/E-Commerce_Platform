@@ -81,7 +81,6 @@ public class UserService implements UserDetailsService { // Make this class impl
         if (user.getPhoneNumber() != null) currentUser.setPhoneNumber(user.getPhoneNumber());
         return repo.save(currentUser);
     }
-
     @Transactional
     public void deactivateUser(Long userId) {
         User user = repo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
