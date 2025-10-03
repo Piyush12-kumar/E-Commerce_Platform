@@ -51,7 +51,7 @@ A full-featured e-commerce application built with Spring Boot, featuring user au
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/ecommerce-project.git
+   git clone https://https://github.com/Piyush12-kumar/E-Commerce_Platform
    cd ecommerce-project
    ```
 
