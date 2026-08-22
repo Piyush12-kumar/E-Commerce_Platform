@@ -33,11 +33,14 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     @Bean
     public AuthenticationProvider authProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(new BCryptPasswordEncoder(12));
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
@@ -56,7 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/users/register", "/api/users/login", "/api/products/get/{id}",
                                 "/api/products/allProducts","/api/products/featured",
-                                "/api/products/category","/api/products/search","/api/discounts/{id}").permitAll()
+                                "/api/products/category","/api/products/search","/api/discounts/{id}",
+                                "/api/categories/getAll","/api/reviews/product/**").permitAll()
                         .requestMatchers("/api/users/profile", "/api/users/update", "/api/cart/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/users/admin/**"
                                 ,"/api/products/add","/api/products/update/{id}"
@@ -73,7 +77,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000", "http://localhost:3001"));
+        config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000", "http://localhost:3001"));
         config.setAllowedMethods(Arrays.asList("*"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);

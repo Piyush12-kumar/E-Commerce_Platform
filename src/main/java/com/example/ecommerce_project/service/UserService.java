@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService; // Import the interface
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,14 +22,15 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class UserService implements UserDetailsService { // Make this class implement the interface
+public class UserService implements UserDetailsService {
 
     @Autowired
     private UserRepo repo;
     @Autowired
     private AddressRepo addressRepo;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
-    // This is now the ONLY implementation and it's the correct one.
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -43,8 +44,7 @@ public class UserService implements UserDetailsService { // Make this class impl
 
     @Transactional
     public User saveUser(User user) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        user.setPassword(encoder.encode(user.getPassword()));
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
         return repo.save(user);
     }
@@ -92,9 +92,8 @@ public class UserService implements UserDetailsService { // Make this class impl
     @Transactional
     public boolean changePassword(String oldPassword, String newPassword) {
         User user = getCurrentUser();
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        if (encoder.matches(oldPassword, user.getPassword())) {
-            user.setPassword(encoder.encode(newPassword));
+        if (passwordEncoder.matches(oldPassword, user.getPassword())) {
+            user.setPassword(passwordEncoder.encode(newPassword));
             repo.save(user);
             return true;
         } else {

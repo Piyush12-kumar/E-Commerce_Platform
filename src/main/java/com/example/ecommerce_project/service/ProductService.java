@@ -1,6 +1,7 @@
 package com.example.ecommerce_project.service;
 
 import com.example.ecommerce_project.Dao.ProductRepo;
+import com.example.ecommerce_project.exception.ResourceNotFoundException;
 import com.example.ecommerce_project.model.Product;
 import com.example.ecommerce_project.model.Review;
 import jakarta.persistence.criteria.Predicate;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ public class ProductService {
     @Value("${server.servlet.context-path:}")
     private String contextPath;
 
+    @Transactional(readOnly = true)
     public Page<Product> findProducts(String name, Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, Boolean featured, Boolean active, Pageable pageable) {
         Specification<Product> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -36,7 +39,7 @@ public class ProductService {
                         "%" + name.toLowerCase() + "%"));
             }
             if(categoryId!=null){
-                predicates.add(criteriaBuilder.equal(root.get("category").get("id"), categoryId));
+                predicates.add(criteriaBuilder.equal(root.get("category").get("categoryId"), categoryId));
             }
 
             if(minPrice != null){
@@ -58,47 +61,47 @@ public class ProductService {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
         Page<Product> products = productRepo.findAll(spec, pageable);
-        // Convert database image names to full URLs
-        products.forEach(this::setImageUrl);
+        // Build full image URLs without modifying managed entities
+        products.forEach(this::buildImageUrl);
         return products;
     }
 
+    @Transactional(readOnly = true)
     public Product getProductById(Long id) {
         Product product = productRepo.findById(id).orElse(null);
         if (product != null) {
-            setImageUrl(product);
+            buildImageUrl(product);
         }
         return product;
     }
 
+    @Transactional(readOnly = true)
     public List<Product> getFeaturedProducts() {
         Specification<Product> spec = (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("featured"), true);
         List<Product> products = productRepo.findAll(spec);
-        // Convert database image names to full URLs
-        products.forEach(this::setImageUrl);
+        products.forEach(this::buildImageUrl);
         return products;
     }
 
+    @Transactional(readOnly = true)
     public List<Product> getProductsByCategory(String categoryName) {
         List<Product> products = productRepo.findProductByCategory_Name(categoryName);
         if (products == null || products.isEmpty()) {
             return new ArrayList<>();
         }
-        // Convert database image names to full URLs
-        products.forEach(this::setImageUrl);
+        products.forEach(this::buildImageUrl);
         return products;
     }
 
     /**
-     * Converts the database image filename to a full URL that frontend can use
+     * Builds the full image URL for the product.
+     * Uses readOnly transaction to prevent dirty-checking from persisting the URL change.
      */
-    private void setImageUrl(Product product) {
+    private void buildImageUrl(Product product) {
         String imageName = product.getImageURL();
-        if (imageName != null && !imageName.isEmpty()) {
-            // Convert filename from database to full URL
+        if (imageName != null && !imageName.isEmpty() && !imageName.startsWith("http")) {
             product.setImageURL("http://localhost:" + serverPort + contextPath + "/images/products/" + imageName);
-        } else {
-            // Set default image if no image is specified
+        } else if (imageName == null || imageName.isEmpty()) {
             product.setImageURL("http://localhost:" + serverPort + contextPath + "/images/products/default-product.jpg");
         }
     }
@@ -107,9 +110,9 @@ public class ProductService {
         return productRepo.save(product);
     }
 
-
     public Product updateProduct(Long id, Product product) {
-        Product updatesProduct = productRepo.findById(id).get();
+        Product updatesProduct = productRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         updatesProduct.setName(product.getName());
         updatesProduct.setDescription(product.getDescription());
         updatesProduct.setPrice(product.getPrice());
@@ -117,23 +120,23 @@ public class ProductService {
         return productRepo.save(updatesProduct);
     }
 
-
     public Product updateStock(Long id, Integer stock) {
-        Product updatesProduct = productRepo.findById(id).get();
+        Product updatesProduct = productRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         updatesProduct.setStock(stock);
         return productRepo.save(updatesProduct);
     }
 
-
     public Product updateFeaturedStatus(Long id, Boolean featured) {
-        Product updatesProduct = productRepo.findById(id).get();
+        Product updatesProduct = productRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         updatesProduct.setFeatured(featured);
         return productRepo.save(updatesProduct);
     }
 
-
     public Product updateActiveStatus(Long id, Boolean active) {
-        Product updatesProduct = productRepo.findById(id).get();
+        Product updatesProduct = productRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         updatesProduct.setActive(active);
         return productRepo.save(updatesProduct);
     }
@@ -142,21 +145,23 @@ public class ProductService {
         productRepo.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
     public List<Product> searchByKeyword(String keyword) {
         return productRepo.searchProducts(keyword);
     }
 
     public Product addReview(Long productId, Review review) {
         Product product = productRepo.findById(productId).
-                orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+                orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
         review.setProduct(product);
         product.getReviews().add(review);
         return productRepo.save(product);
     }
 
+    @Transactional(readOnly = true)
     public List<Review> getProductReviews(Long productId) {
         Product product = productRepo.findById(productId).
-                orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+                orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
         return product.getReviews();
     }
 }

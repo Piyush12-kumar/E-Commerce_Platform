@@ -48,6 +48,7 @@ public class ReviewController {
     }
 
     @GetMapping("/product/{productId}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<Review>> getReviewsByProduct(@PathVariable Long productId) {
         List<Review> reviews = reviewService.getReviewsByProduct(productId);
         if (reviews.isEmpty()) {

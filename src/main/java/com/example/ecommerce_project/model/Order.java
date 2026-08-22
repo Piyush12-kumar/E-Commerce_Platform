@@ -3,14 +3,12 @@ package com.example.ecommerce_project.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@NoArgsConstructor
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -182,5 +180,8 @@ public class Order {
 
     public void setDeliveredDate(LocalDateTime deliveredDate) {
         this.deliveredDate = deliveredDate;
+    }
+
+    public Order() {
     }
 }

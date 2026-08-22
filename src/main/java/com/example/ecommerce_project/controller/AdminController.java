@@ -3,33 +3,32 @@ package com.example.ecommerce_project.controller;
 
 import com.example.ecommerce_project.model.User;
 import com.example.ecommerce_project.service.JwtService;
+import com.example.ecommerce_project.service.TokenBlacklistService;
 import com.example.ecommerce_project.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "http://localhost:5173")
 public class AdminController {
-
-    @Autowired
-    AuthenticationManager authenticationManager;
 
     @Autowired
     JwtService jwtService;
 
     @Autowired
     UserService userService;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated() "+ "and hasRole('ADMIN')")
@@ -39,8 +38,16 @@ public class AdminController {
 
     @GetMapping("/logout")
     @PreAuthorize("isAuthenticated() "+ "and hasRole('ADMIN')")
-    public ResponseEntity<String> logoutUser() {
-        return new ResponseEntity<>("Admin logged out successfully", HttpStatus.OK);
+    public ResponseEntity<String> logoutUser(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            Date expiryDate = jwtService.extractAllClaims(token).getExpiration();
+            tokenBlacklistService.blacklistToken(token, expiryDate);
+            SecurityContextHolder.clearContext();
+            return new ResponseEntity<>("Admin logged out successfully", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("No authorization token found", HttpStatus.BAD_REQUEST);
     }
 
     @PutMapping("/update")

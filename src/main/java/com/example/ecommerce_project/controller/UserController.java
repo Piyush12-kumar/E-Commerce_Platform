@@ -28,7 +28,6 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     @Autowired
@@ -68,7 +67,6 @@ public class UserController {
     }
 
     @PostMapping(value="/login", consumes = {"application/json", "application/json;charset=UTF-8"})
-    @CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = {RequestMethod.POST})
     public ResponseEntity<String> loginUser(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(

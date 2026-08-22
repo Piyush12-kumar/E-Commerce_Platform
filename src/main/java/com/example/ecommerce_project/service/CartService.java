@@ -40,7 +40,6 @@ public class CartService {
         Cart cart = cartRepo.findByUser(user);
         if (cart == null) {
             cart = new Cart(user);
-            // **FIXED**: Save the new cart as soon as it's created to get an ID.
             cartRepo.save(cart);
         }
 
@@ -75,14 +74,36 @@ public class CartService {
             throw new ResourceNotFoundException("Cart not found for the user");
         }
 
-        // Find and remove the CartItem.
+        CartItem itemToRemove = cart.getItems().stream()
+                .filter(item -> item.getProduct().getProductId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found in cart with id: " + productId));
+
+        // If quantity > 1, decrement; otherwise remove entirely
+        if (itemToRemove.getQuantity() > 1) {
+            itemToRemove.setQuantity(itemToRemove.getQuantity() - 1);
+        } else {
+            cart.getItems().remove(itemToRemove);
+            cartItemRepo.delete(itemToRemove);
+        }
+
+        return cartRepo.save(cart);
+    }
+
+    @Transactional
+    public Cart removeItemFromCart(Long productId) {
+        Cart cart = getCartItems();
+        if (cart == null) {
+            throw new ResourceNotFoundException("Cart not found for the user");
+        }
+
         CartItem itemToRemove = cart.getItems().stream()
                 .filter(item -> item.getProduct().getProductId().equals(productId))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found in cart with id: " + productId));
 
         cart.getItems().remove(itemToRemove);
-        cartItemRepo.delete(itemToRemove); // Explicitly delete the orphaned item
+        cartItemRepo.delete(itemToRemove);
 
         return cartRepo.save(cart);
     }
@@ -91,7 +112,6 @@ public class CartService {
     public Cart clearCart() {
         Cart cart = getCartItems();
         if (cart != null && !cart.getItems().isEmpty()) {
-            // Thanks to orphanRemoval=true, clearing the list will delete the items.
             cart.getItems().clear();
             return cartRepo.save(cart);
         }

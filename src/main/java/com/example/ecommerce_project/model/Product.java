@@ -27,8 +27,9 @@ public class Product {
 
     private BigDecimal price;
     private BigDecimal discountPrice;
-    private Integer Stock;
+    private Integer stock;
 
+    @Column(unique = true)
     private String sku;
     private String imageURL;
 
@@ -83,8 +84,8 @@ public class Product {
     public void setPrice(BigDecimal price) { this.price = price; }
     public BigDecimal getDiscountPrice() { return discountPrice; }
     public void setDiscountPrice(BigDecimal discountPrice) { this.discountPrice = discountPrice; }
-    public Integer getStock() { return Stock; }
-    public void setStock(Integer stock) { Stock = stock; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
     public String getImageURL() { return imageURL; }
@@ -109,7 +110,7 @@ public class Product {
         this.description = "";
         this.price = BigDecimal.ZERO;
         this.discountPrice = BigDecimal.ZERO;
-        this.Stock = 0;
+        this.stock = 0;
     }
 
     public Product(Long productId, String name, String description, BigDecimal price, BigDecimal discountPrice, Integer stock, String sku, String imageURL, Category category, Set<Tag> tags, List<Review> reviews, Boolean featured, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt) {
@@ -118,7 +119,7 @@ public class Product {
         this.description = description;
         this.price = price;
         this.discountPrice = discountPrice;
-        Stock = stock;
+        this.stock = stock;
         this.sku = sku;
         this.imageURL = imageURL;
         this.category = category;

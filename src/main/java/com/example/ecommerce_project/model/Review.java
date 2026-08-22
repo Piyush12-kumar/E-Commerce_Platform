@@ -1,14 +1,10 @@
 package com.example.ecommerce_project.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
-@NoArgsConstructor
 @Table(name = "reviews")
 public class Review {
     @Id
@@ -107,6 +103,9 @@ public class Review {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Review() {
     }
 
     public Review(Long id, Integer rating, String comment, Product product, User user, Boolean approved, LocalDateTime createdAt, LocalDateTime updatedAt) {

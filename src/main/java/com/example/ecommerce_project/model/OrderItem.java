@@ -3,7 +3,6 @@ package com.example.ecommerce_project.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 @Entity

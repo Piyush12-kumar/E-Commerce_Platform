@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -31,6 +30,12 @@ public class CartController {
     @DeleteMapping("/remove/{productId}")
     public ResponseEntity<Cart> removeFromCart(@PathVariable Long productId) {
         Cart updatedCart = cartService.removeFromCart(productId);
+        return new ResponseEntity<>(updatedCart, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/remove-item/{productId}")
+    public ResponseEntity<Cart> removeItemFromCart(@PathVariable Long productId) {
+        Cart updatedCart = cartService.removeItemFromCart(productId);
         return new ResponseEntity<>(updatedCart, HttpStatus.OK);
     }
 

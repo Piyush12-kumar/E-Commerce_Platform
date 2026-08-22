@@ -3,6 +3,7 @@ package com.example.ecommerce_project.service;
 
 import com.example.ecommerce_project.Dao.OrderItemRepo;
 import com.example.ecommerce_project.Dao.OrderRepo;
+import com.example.ecommerce_project.Dao.ProductRepo;
 import com.example.ecommerce_project.exception.ResourceNotFoundException;
 import com.example.ecommerce_project.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class OrderService {
@@ -29,6 +31,8 @@ public class OrderService {
     @Autowired
     private OrderItemRepo orderItemRepo;
 
+    @Autowired
+    private ProductRepo productRepo;
 
     @Transactional
     public Order createOrder() {
@@ -41,6 +45,7 @@ public class OrderService {
 
         Order order = new Order();
         order.setUser(user);
+        order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(Order.OrderStatus.PENDING);
 
@@ -48,19 +53,26 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (CartItem cartItem : cart.getItems()) {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPricePerUnit(cartItem.getProduct().getPrice());
+            Product product = cartItem.getProduct();
 
-            // **FIXED**: Calculate and set the total price for the order item
+            // Validate and reduce stock
+            if (product.getStock() == null || product.getStock() < cartItem.getQuantity()) {
+                throw new IllegalStateException("Insufficient stock for product: " + product.getName());
+            }
+            product.setStock(product.getStock() - cartItem.getQuantity());
+            productRepo.save(product);
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProduct(product);
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setPricePerUnit(product.getPrice());
+
             BigDecimal itemTotalPrice = orderItem.getPricePerUnit().multiply(BigDecimal.valueOf(orderItem.getQuantity()));
             orderItem.setTotalPrice(itemTotalPrice);
 
             orderItem.setOrder(order);
             orderItems.add(orderItem);
 
-            // **FIXED**: Add the calculated item total price to the order's total amount
             totalAmount = totalAmount.add(itemTotalPrice);
         }
 
@@ -70,7 +82,6 @@ public class OrderService {
         Order savedOrder = orderRepo.save(order);
         orderItemRepo.saveAll(orderItems);
 
-        // Clear the cart only after the order is created successfully
         cartService.clearCart();
 
         return savedOrder;
@@ -78,7 +89,6 @@ public class OrderService {
 
     public List<Order> getAllOrders() {
         User user = userService.getCurrentUser();
-        // **FIXED**: Gracefully handle the case where a user has no orders yet.
         if (user.getOrders() == null || user.getOrders().isEmpty()) {
             return new ArrayList<>();
         }
@@ -95,7 +105,7 @@ public class OrderService {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        if (!order.getUser().equals(user)) {
+        if (!order.getUser().getUserId().equals(user.getUserId())) {
             throw new ResourceNotFoundException("Order does not belong to the current user");
         }
 

@@ -2,7 +2,6 @@ package com.example.ecommerce_project.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
 
 @Entity
 

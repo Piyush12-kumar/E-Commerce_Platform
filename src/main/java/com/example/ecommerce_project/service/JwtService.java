@@ -65,8 +65,8 @@ public class JwtService {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            // Return null or handle as needed
-            return null;
+            // Return claims even from an expired token (needed for logout)
+            return e.getClaims();
         }
     }
 

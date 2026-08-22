@@ -21,7 +21,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.createOrder());
     }
 
-    @GetMapping("getAll")
+    @GetMapping("/getAll")
     public ResponseEntity<List<Order>> getAllOrders() {
         List<Order> orders = orderService.getAllOrders();
         if (orders.isEmpty()) {
